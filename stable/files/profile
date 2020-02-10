@@ -1,0 +1,9 @@
+export CHARSET=UTF-8
+export LANG=C.UTF-8
+export PATH="/app/.env/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+export PS1='\h:\w\$ '
+umask 022
+
+for script in /etc/profile.d/*.sh;do
+    [ -r $script ] && . $script
+done
