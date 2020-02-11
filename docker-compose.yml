@@ -5,7 +5,6 @@ services:
       - UID=${HOST_UID:-0}
       - USER=${HOST_USER:-root}
       - USER_HOME=${USER_HOME:-/root}
-      - REPO_DIRECTORY=${REPO_DIRECTORY}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
       - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
@@ -19,13 +18,12 @@ services:
         - HOST_USER=${HOST_USER:-root}
         - USER_HOME=${USER_HOME:-/root}
     volumes:
-    - ${REPO_DIRECTORY}:/repo
+    - ${WORKDIR}:/repo
   devel:
     environment:
       - UID=${HOST_UID:-0}
       - USER=${HOST_USER:-root}
       - USER_HOME=${USER_HOME:-/root}
-      - REPO_DIRECTORY=${REPO_DIRECTORY:-~/cloudformation}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
       - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
@@ -39,4 +37,4 @@ services:
         - HOST_USER=${HOST_USER:-root}
         - USER_HOME=${USER_HOME:-/root}
     volumes:
-    - ${REPO_DIRECTORY}:/repo
+    - ${WORKDIR}:/repo
