@@ -4,7 +4,7 @@
 # --------------------------------------------------------------------
 
 SERVICE_TARGET ?= $(strip $(if $(target),$(target),stable))
-REPO_DIRECTORY = ~/repositories
+WORKDIR := ~/repositories
 
 ifeq ($(user),)
 # USER retrieved from env, UID from shell.
@@ -29,18 +29,18 @@ CMD_ARGUMENTS ?= $(cmd)
 export HOST_USER
 export HOST_UID
 export USER_HOME
-export REPO_DIRECTORY
+export WORKDIR
 
 
 .PHONY: shell
 shell:
 ifeq ($(CMD_ARGUMENTS),)
 	@# no command is given, default to shell
-	@[ -d $(REPO_DIRECTORY) ] || mkdir $(REPO_DIRECTORY)
+	@[ -d $(WORKDIR) ] || mkdir $(WORKDIR)
 	docker-compose run --rm $(SERVICE_TARGET) bash -l
 else
 	@# run the command
-	@[ -d $(REPO_DIRECTORY) ] || mkdir $(REPO_DIRECTORY)
+	@[ -d $(WORKDIR) ] || mkdir $(WORKDIR)
 	docker-compose run --rm $(SERVICE_TARGET) bash -l -c "$(CMD_ARGUMENTS)"
 endif
 
@@ -50,10 +50,9 @@ build:
 
 .PHONY: whoami
 whoami:
-	@[ -d ~/local ] || mkdir ~/local
+	@[ -d $(WORKDIR) ] || mkdir $(WORKDIR)
 	docker-compose run --rm $(SERVICE_TARGET) bash -l -c "whoami"
 	
 .PHONY: clean
 clean:
-	@[ -d ~/local ] || mkdir ~/local
-	docker-compose run --rm $(SERVICE_TARGET) bash -l -c "make clean"
+	@echo 'Nothing to cleanup'
