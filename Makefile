@@ -3,8 +3,10 @@
 # SPDX-License-Identifier: MIT
 # --------------------------------------------------------------------
 
+NAME := aws-workspace
 SERVICE_TARGET ?= $(strip $(if $(target),$(target),stable))
 WORKDIR := ~/repositories
+
 
 ifeq ($(user),)
 # USER retrieved from env, UID from shell.
@@ -37,16 +39,36 @@ shell:
 ifeq ($(CMD_ARGUMENTS),)
 	@# no command is given, default to shell
 	@[ -d $(WORKDIR) ] || mkdir $(WORKDIR)
-	docker-compose run --rm $(SERVICE_TARGET) bash -l
+	docker-compose -p $(NAME) run --rm $(SERVICE_TARGET) bash -l
 else
 	@# run the command
 	@[ -d $(WORKDIR) ] || mkdir $(WORKDIR)
-	docker-compose run --rm $(SERVICE_TARGET) bash -l -c "$(CMD_ARGUMENTS)"
+	docker-compose -p $(NAME) run --rm $(SERVICE_TARGET) bash -l -c "$(CMD_ARGUMENTS)"
 endif
 
 .PHONY: build
-build:
-	docker-compose build $(SERVICE_TARGET)
+build: 
+	docker-compose -p $(NAME) build $(SERVICE_TARGET)
+
+.PHONY: update
+update: clean
+	# run development build to create input-artifacts in .build
+	make build target=devel
+	@# update build artifacts in .build
+	@# - create temporary container from _devel target
+	@$(eval tmp_container = $(shell \
+		printf '$(NAME)_devel-'$$(($$(date +%s%N)/1000000)) \
+	))
+	docker create --name '$(tmp_container)' '$(NAME)_devel'
+	@# - copy artifacts
+	docker cp '$(tmp_container)':/build .build
+	@# - cleanup temporary container
+	docker rm '$(tmp_container)'
+	# if update target == stable, copy build artifacts and call regular build
+ifeq ($(SERVICE_TARGET),stable)
+	cp .build/requirements.txt stable/requirements.txt
+	make build
+endif
 
 .PHONY: whoami
 whoami:
@@ -55,4 +77,4 @@ whoami:
 	
 .PHONY: clean
 clean:
-	@echo 'Nothing to cleanup'
+	[ ! -d .build ] || rm -rf .build

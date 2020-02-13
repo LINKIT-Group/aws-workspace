@@ -1,6 +1,7 @@
-FROM python:3.7-slim-stretch
+FROM python:3.8-slim-buster
 
-COPY Pipfile .
+COPY requirements.txt .
+
 RUN apt-get update --fix-missing \
     && apt-get -y install --no-install-recommends \
         bash \
@@ -12,10 +13,7 @@ RUN apt-get update --fix-missing \
         groff \
         zip \
         unzip \
-    && python -m pip install \
-        pipenv==2018.11.26
-
-RUN pipenv install && pipenv install --system
+    && pip install -r requirements.txt
 
 ARG HOST_UID=${HOST_UID:-0}
 ARG HOST_USER=${HOST_USER:-root}

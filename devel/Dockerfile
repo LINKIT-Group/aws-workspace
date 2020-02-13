@@ -1,6 +1,7 @@
 FROM python:3.8-slim-buster
 
-COPY Pipfile .
+RUN mkdir /build
+COPY requirements.in build/
 
 RUN apt-get update --fix-missing \
     && apt-get -y install --no-install-recommends \
@@ -17,13 +18,16 @@ RUN apt-get update --fix-missing \
     && apt-get -y install --no-install-recommends \
         nodejs \
     && python -m pip install \
-        pipenv==2018.11.26 \
-    && pipenv install && pipenv install --system
+        pip-tools==4.4.1 \
+    && cd /build \
+    && pip-compile requirements.in \
+    && pip install -r requirements.txt
 
-# CDK is broken via pipenv
+# keep cdk excluded from pipenv until its stable
 RUN python -m pip install \
         aws-cdk.core \
     && npm install -g aws-cdk
+
 
 ARG HOST_UID=${HOST_UID:-0}
 ARG HOST_USER=${HOST_USER:-root}

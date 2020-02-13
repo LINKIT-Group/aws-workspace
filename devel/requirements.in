@@ -1,0 +1,8 @@
+awscli
+python-dateutil
+botocore
+boto3
+aws-sam-cli
+pylint
+cfn-lint
+pytest
