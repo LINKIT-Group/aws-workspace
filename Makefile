@@ -50,6 +50,11 @@ endif
 build: 
 	docker-compose -p $(NAME) build $(SERVICE_TARGET)
 
+.PHONY: cfn-make
+cfn-make:
+	make -C devel/cfn-makefile
+	printf "devel/files/ stable/files/" |xargs -n 1 cp -v devel/cfn-makefile/.build/cfn-Makefile
+
 .PHONY: update
 update: clean
 	# run development build to create input-artifacts in .build

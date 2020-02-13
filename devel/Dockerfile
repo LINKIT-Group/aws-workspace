@@ -33,6 +33,8 @@ ARG HOST_UID=${HOST_UID:-0}
 ARG HOST_USER=${HOST_USER:-root}
 ARG USER_HOME=${USER_HOME:-/root}
 
+COPY files/cfn-Makefile "${USER_HOME}"/
+COPY files/aliases "${USER_HOME}"/.aliases
 COPY files/profile /etc/
 COPY files/*.sh /etc/profile.d/
 

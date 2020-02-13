@@ -1,4 +1,12 @@
 
+#function make(){
+#    if [ ! -f Makefile ] && [ ! "${1:0:1}" = '-' ];then
+#        echo nomake
+#    else
+#        make "$@" >/dev/stdout 2>/dev/stderr &
+#    fi
+#}
+
 function whoami(){
     echo 'AWS credentials used:'
     aws sts get-caller-identity
