@@ -56,7 +56,7 @@ cfn-make:
 	printf "devel/files/ stable/files/" |xargs -n 1 cp -v devel/cfn-makefile/.build/cfn-Makefile
 
 .PHONY: update
-update: clean
+update: clean cfn-make
 	# run development build to create input-artifacts in .build
 	make build target=devel
 	@# update build artifacts in .build
