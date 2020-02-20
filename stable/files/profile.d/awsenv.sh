@@ -1,4 +1,5 @@
 
+
 function whoami(){
     echo 'AWS credentials used:'
     aws sts get-caller-identity

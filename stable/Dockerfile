@@ -1,34 +1,29 @@
 FROM python:3.8-slim-buster
 
-COPY requirements.txt .
+COPY files/generated/requirements.txt .
 
 RUN apt-get update --fix-missing \
     && apt-get -y install --no-install-recommends \
         bash \
+        procps \
         jq \
         curl \
         git \
-        software-properties-common \
-        build-essential \
-        groff \
+        make \
+        gosu \
         zip \
         unzip \
+    && python -m pip install \
+        pip-tools==4.4.1 \
+        virtualenv==20.0.4 \
     && pip install -r requirements.txt
 
-ARG HOST_UID=${HOST_UID:-0}
-ARG HOST_USER=${HOST_USER:-root}
-ARG USER_HOME=${USER_HOME:-/root}
-
-COPY files/cfn-Makefile "${USER_HOME}"/
-COPY files/aliases "${USER_HOME}"/.aliases
 COPY files/profile /etc/
-COPY files/*.sh /etc/profile.d/
+COPY files/profile.d/*.sh /etc/profile.d/
+COPY files/generated/scripts /scripts
+COPY files/generated/cfn-Makefile /
+COPY files/aliases /.aliases
+COPY files/entrypoint.sh /
 
-RUN sh -c "[ \"${HOST_USER}\" = root ]" || \
-    (groupadd -r ${HOST_USER} -g ${HOST_UID} \
-    && useradd -d "${USER_HOME}" -M -r -l -N -s /usr/sbin/nologin \
-       -u ${HOST_UID} -g ${HOST_UID} ${HOST_USER} \
-    && mkdir -p "${USER_HOME}" \
-    && chown -R "${HOST_UID}:${HOST_UID}" "${USER_HOME}")
-
-WORKDIR /repo
+WORKDIR /git
+CMD ["/bin/sh", "/entrypoint.sh" ]

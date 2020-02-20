@@ -3,38 +3,30 @@ services:
   stable:
     environment:
       - UID=${HOST_UID:-0}
+      - GID=${HOST_GID:-0}
       - USER=${HOST_USER:-root}
-      - USER_HOME=${USER_HOME:-/root}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
       - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
       - AWS_ROLE_ARN=${AWS_ROLE_ARN:-}
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-eu-west-1}
-    user: ${HOST_USER:-root}
+      - BUILD_ROOTDIR=/git/.build
     build:
       context: stable
-      args:
-        - HOST_UID=${HOST_UID:-0}
-        - HOST_USER=${HOST_USER:-root}
-        - USER_HOME=${USER_HOME:-/root}
     volumes:
-    - ${WORKDIR}:/repo
+    - ${WORKDIR}:/git:rw
   devel:
     environment:
       - UID=${HOST_UID:-0}
+      - GID=${HOST_GID:-0}
       - USER=${HOST_USER:-root}
-      - USER_HOME=${USER_HOME:-/root}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
       - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN:-}
       - AWS_ROLE_ARN=${AWS_ROLE_ARN:-}
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-eu-west-1}
-    user: ${HOST_USER:-root}
+      - BUILD_ROOTDIR=/git/.build
     build:
       context: devel
-      args:
-        - HOST_UID=${HOST_UID:-0}
-        - HOST_USER=${HOST_USER:-root}
-        - USER_HOME=${USER_HOME:-/root}
     volumes:
-    - ${WORKDIR}:/repo
+    - ${WORKDIR}:/git:rw

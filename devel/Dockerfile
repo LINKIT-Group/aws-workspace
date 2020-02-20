@@ -1,14 +1,19 @@
 FROM python:3.8-slim-buster
 
-RUN mkdir /build
+RUN mkdir -p /build/scripts \
+    && ln -sf /build/scripts /scripts
+
 COPY requirements.in build/
 
 RUN apt-get update --fix-missing \
     && apt-get -y install --no-install-recommends \
         bash \
+        procps \
         jq \
         curl \
         git \
+        make \
+        gosu \
         software-properties-common \
         build-essential \
         groff \
@@ -19,6 +24,7 @@ RUN apt-get update --fix-missing \
         nodejs \
     && python -m pip install \
         pip-tools==4.4.1 \
+        virtualenv==20.0.4 \
     && cd /build \
     && pip-compile requirements.in \
     && pip install -r requirements.txt
@@ -28,21 +34,12 @@ RUN python -m pip install \
         aws-cdk.core \
     && npm install -g aws-cdk
 
-
-ARG HOST_UID=${HOST_UID:-0}
-ARG HOST_USER=${HOST_USER:-root}
-ARG USER_HOME=${USER_HOME:-/root}
-
-COPY files/cfn-Makefile "${USER_HOME}"/
-COPY files/aliases "${USER_HOME}"/.aliases
 COPY files/profile /etc/
-COPY files/*.sh /etc/profile.d/
+COPY files/profile.d/*.sh /etc/profile.d/
+COPY files/scripts/* /build/scripts/
+COPY files/generated/cfn-Makefile /
+COPY files/aliases /.aliases
+COPY files/entrypoint.sh /
 
-RUN sh -c "[ \"${HOST_USER}\" = root ]" || \
-    (groupadd -r ${HOST_USER} -g ${HOST_UID} \
-    && useradd -d "${USER_HOME}" -M -r -l -N -s /usr/sbin/nologin \
-       -u ${HOST_UID} -g ${HOST_UID} ${HOST_USER} \
-    && mkdir -p "${USER_HOME}" \
-    && chown -R "${HOST_UID}:${HOST_UID}" "${USER_HOME}")
-
-WORKDIR /repo
+WORKDIR /git
+CMD ["/bin/sh", "/entrypoint.sh" ]

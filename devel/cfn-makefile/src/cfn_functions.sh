@@ -106,7 +106,7 @@ function derive_stackname(){
         branch_commit=""
         step_0="${1}"
     fi
-
+    
     step_1="$(\
         printf "${step_0}" \
         |sed 's/^[\/\.]*//g;s/\/$//g;s/^\.build\///g' \
@@ -116,6 +116,8 @@ function derive_stackname(){
             else if ( NF == 2) print $(NF - 1)"/"$(NF);
             else print $1"_-_"$(NF - 1)"/"$(NF);}' \
     )" || return $?
+
+    >&2 echo "step_1=$step_1"
 
     if [ -z "${step_1}" ];then
         step_1=$(basename "${3}") || return $?
@@ -155,7 +157,7 @@ function derive_stackname(){
 
 function create_configuration_template(){
 
-cat << CONFIGURATION_STACK >./.build/configstack.yaml
+cat << CONFIGURATION_STACK >"${BUILD_ROOTDIR}"/configstack.yaml
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Description: ConfigurationStack

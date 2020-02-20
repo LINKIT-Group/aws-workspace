@@ -5,7 +5,7 @@ CYAN="\[\e[1;36m\]"
 DEV="\[\e[100m\]"
 
 if [ ! -z "$SHOW_WARNING" ];then
-	PS1="$RED\h [$NORMAL\w$RED]#$NORMAL "
+	PS1="$RED\h [$NORMAL\w$RED]# $NORMAL"
 else
-	PS1="$DEV\h$NORMAL [\w]$DEV\$$NORMAL "
+	PS1="$GREEN\h [$NORMAL\w$GREEN]\$ $NORMAL"
 fi

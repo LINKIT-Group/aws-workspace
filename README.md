@@ -1,8 +1,8 @@
  
-# AWS Workspace
+# Cloud Toolkit
 Docker based Workspace configuration to manage deployments on AWS. This includes environment-setup for most common access-scenario's, the awscli package, and packages closely related and/ or used together in practice. 
 
-Build and run via Makefile. Mounts repository directory from HOST in container runtime on /repo. Default is ~/repositories on HOST (can be changed in Makefile).
+Build and run via Makefile. Mounts repository directory from HOST in container runtime on /git. Default is ~/repositories on HOST (can be changed in Makefile).
 
 Stable points to a directory where packages are version-locked, these are tested
 frequently on each (sub-) stack in the following repositories;
@@ -28,8 +28,8 @@ export AWS_DEFAULT_REGION="${YOUR_AWS_DEFAULT_REGION}"
 # option B -- add to get new (temporary) credentials via assume-role
 # export AWS_ROLE_ARN="${YOUR_AWS_ROLE_ARN}"
 
-# start shell
-make shell
+# start shell (default target == shell)
+make
 
 # check environment only
 make whoami
@@ -44,7 +44,11 @@ make build
 # by default the Makefile points to "stable" (=symlink to a version-directory, e.g. v1)
 # to use a different version, use the Makefile target= option as follows:
 make build target=devel
-make shell target=devel
+make target=devel
+
+## Make toolkit update itself (via devel target)
+# promote Makefile-, Python package updates to stable
+make toolkit
 ```
 
 ## CDK quickstart (devel only for now)

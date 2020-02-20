@@ -12,7 +12,8 @@ OBJECTS := $(shell find src -name '*.cfn-template' -o -name '*.sh' -o -name '*.t
 
 $(TARGET): $(OBJECTS) generate.py
 	[ -d .build ] || mkdir .build
-	$(CC) ./generate.py >$(TARGET)
+	$(CC) ./generate.py >$(TARGET).tmp
+	[ -s $(TARGET).tmp ] && mv $(TARGET).tmp $(TARGET)
 
 .PHONY: test
 test:

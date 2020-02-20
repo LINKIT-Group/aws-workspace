@@ -8,8 +8,10 @@
 
 SHELL := /bin/bash
 NAME := CloudFormation Makefile
-VERSION := 0.92-1581628435611
-DATE := 2020-02-13T21:13:55.610980+00:00
+VERSION := 0.94-1582230416954
+DATE := 2020-02-20T20:26:56.953637+00:00
+
+BUILD_ROOTDIR := $(if $(BUILD_ROOTDIR),$(BUILD_ROOTDIR),.build)
 
 # profile=
 _AWS_PROFILE = \
@@ -47,8 +49,9 @@ stack: read_configuration package
 			--profile $(_AWS_PROFILE) \
 	        --stack-name $(_DEPLOYSTACK) \
 			--role-arn $(IAMServiceRole) \
-			--template-file $(_BUILDDIR)/template.yaml \
+			--template-file "$(_BUILDDIR)"/template-generated.yaml \
 	        --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
+			--no-fail-on-empty-changeset \
 			--tags \
 				_CONFIGSTACK="$(_CONFIGSTACK)" \
 				_GIT_REPOSITORY="$(if $(_GIT_REPOSITORY),$(_GIT_REPOSITORY),None)" \
@@ -62,13 +65,13 @@ set_workdir:
 	@#   setup a workingspace in ${PATH_OF_THIS_MAKEFILE}/.build
 	$(eval _WORKDIR = $(shell \
     	cd $$(dirname "$${BASH_SOURCE[0]}" || echo ".") && pwd || echo ""))
-	@[ -d .build ] || mkdir .build
-	@tmpfile=.build/tmpfile; \
+	@[ -d "$(BUILD_ROOTDIR)" ] || mkdir "$(BUILD_ROOTDIR)"
+	@tmpfile="$(BUILD_ROOTDIR)"/tmpfile; \
 	   cat <<< "$${GIT_IGNORE}" >$${tmpfile}; \
 	   sh $${tmpfile}; \
 	   rm $${tmpfile}
-	@cat <<< "$${CFN_FUNCTIONS}" >.build/cfn_functions.sh
-	@cat <<< "$${GIT_FUNCTIONS}" >.build/git_functions.sh
+	@cat <<< "$${CFN_FUNCTIONS}" >"$(BUILD_ROOTDIR)"/cfn_functions.sh
+	@cat <<< "$${GIT_FUNCTIONS}" >"$(BUILD_ROOTDIR)"/git_functions.sh
 
 
 .PHONY: set_environment_local
@@ -78,6 +81,7 @@ set_environment_local: set_workdir
 	@#   set by passing template=${path} -- defaults to template.yaml
 	@#   _TEMPLATE_ROOT points to the directory where _TEMPLATE is located
 	$(eval _TEMPLATE = $(if $(template),$(template),template.yaml))
+	$(eval _TEMPLATE_NAME = $(shell basename "$(_TEMPLATE)"))
 	$(eval _TEMPLATE_ROOT = $(shell dirname "$(_TEMPLATE)"))
 ifneq ($(_GIT_REPOSITORY),)
 	@# if git=${repository} is passed, pull from repository into .build/_GIT_ROOT
@@ -90,13 +94,12 @@ ifneq ($(_GIT_REPOSITORY),)
 	@# reconstruct _TEMPLATE_ROOT by putting _GIT_ROOT in front of it
 	@# if no template={path} is given the latter (shell printf) part must be empty
 	# feed_GIT_COMMIT to derive_stackname so it can be pushed to the end
-	$(eval _TEMPLATE_ROOT = .build/$(_GIT_ROOT)$(shell \
+	$(eval _TEMPLATE_ROOT = "$(BUILD_ROOTDIR)"/"$(_GIT_ROOT)"$(shell \
 		printf "$$(printf "$(_TEMPLATE_ROOT)" \
 				   |sed 's/^[\/]*/\//g;s/^[\/\.]*$$//g')" \
 	))
 	@# idem. to _TEMPLATE
-	$(eval _TEMPLATE = $(_TEMPLATE_ROOT)/$(shell \
-		basename "$(_TEMPLATE)"))
+	$(eval _TEMPLATE = "$(_TEMPLATE_ROOT)"/"$(_TEMPLATE_NAME)")
 endif
 
 
@@ -121,9 +124,9 @@ set_environment_aws: set_workdir set_environment_local
 	 	$(cfn-env) derive_stackname "$(_TEMPLATE_ROOT)" "$(_GIT_ROOT)" "$(_WORKDIR)" "$(_USERID)" \
 	)))
 	$(if $(_DEPLOYSTACK),,$(error _DEPLOYSTACK))
-	$(eval _BUILDDIR = .build/$(_DEPLOYSTACK))
+	$(eval _BUILDDIR = "$(BUILD_ROOTDIR)"/"$(_DEPLOYSTACK)")
 	$(eval _CONFIGSTACK = ConfigStack-$(_USERID))
-	@[ -d $(_BUILDDIR) ] || mkdir $(_BUILDDIR)
+	@[ -d "$(_BUILDDIR)" ] || mkdir "$(_BUILDDIR)"
 
 
 .PHONY: set_environment
@@ -137,12 +140,13 @@ set_environment: set_environment_local set_environment_aws
 package: set_environment
 	@# target: package
 	@# 	package CloudFormation (nested) Stacks and Lambdas
+	python /scripts/buildstack.py --stackdir "$(_TEMPLATE_ROOT)" --builddir "$(_BUILDDIR)"
 	aws cloudformation package \
 		--profile $(_AWS_PROFILE) \
-		--template-file $(_TEMPLATE) \
+		--template-file "$(_BUILDDIR)"/"$(_TEMPLATE_NAME)" \
 		--s3-bucket $(ArtifactBucket) \
 		--s3-prefix $(_DEPLOYSTACK) \
-		--output-template-file $(_BUILDDIR)/template.yaml
+		--output-template-file "$(_BUILDDIR)"/template-generated.yaml
 
 
 .PHONY: pre_process
@@ -160,7 +164,7 @@ pre_process: set_environment read_configuration
         export AWS_PROFILE=$(_AWS_PROFILE); \
         export CONFIGURATION_BUCKET=$(ArtifactBucket); \
         export STACKNAME=$(_DEPLOYSTACK); \
-        export BUILDDIR=$(_WORKDIR)/$(_BUILDDIR); \
+        export BUILDDIR=$(_BUILDDIR); \
 		echo "RUNSCRIPT:$(_TEMPLATE_ROOT)/pre_process.sh"; \
 		bash ./pre_process.sh; \
 		exit_code="$$?"; \
@@ -187,7 +191,7 @@ post_process: set_environment read_configuration
         export AWS_PROFILE=$(_AWS_PROFILE); \
         export CONFIGURATION_BUCKET=$(ArtifactBucket); \
         export STACKNAME=$(_DEPLOYSTACK); \
-        export BUILDDIR=$(_WORKDIR)/$(_BUILDDIR); \
+        export BUILDDIR=$(_BUILDDIR); \
 		[ ! -z "$(_STACK_OUTPUTS)" ] && export $(_STACK_OUTPUTS); \
 		echo "RUNSCRIPT:$(_TEMPLATE_ROOT)/post_process.sh"; \
 		bash ./post_process.sh; \
@@ -211,8 +215,9 @@ ifneq ($(noconfig),true)
 		aws cloudformation deploy \
 			--profile $(_AWS_PROFILE) \
 			--no-fail-on-empty-changeset \
-			--template-file .build/configstack.yaml \
+			--template-file "$(BUILD_ROOTDIR)"/configstack.yaml \
 			--capabilities CAPABILITY_NAMED_IAM \
+			--no-fail-on-empty-changeset \
 			--stack-name $(_CONFIGSTACK) \
 			--parameter-overrides \
 				RoleName=ConfigStackDeployRole-$(_USERID)
@@ -270,7 +275,7 @@ ifneq ($(filter %,$(_TEMPLATE) $(_GIT_REPOSITORY)),)
 		template="$(_TEMPLATE)" \
 		noconfig="true"
 endif
-	rm -rf ./.build
+	# rm -rf "$(_BUILDDIR)"
 
 
 .PHONY: pre
@@ -362,13 +367,14 @@ export LICENSE
 
 
 define cfn-env
-	source .build/cfn_functions.sh; \
+	source $(BUILD_ROOTDIR)/cfn_functions.sh; \
 	export AWS_PROFILE=$(_AWS_PROFILE); \
+	export BUILD_ROOTDIR=$(BUILD_ROOTDIR); \
 	exit_on_error
 endef
 
 define git-env
-	source .build/git_functions.sh; \
+	source $(BUILD_ROOTDIR)/git_functions.sh; \
 	exit_on_error
 endef
 
@@ -488,7 +494,7 @@ function derive_stackname(){
         branch_commit=""
         step_0="$${1}"
     fi
-
+    
     step_1="$$(\
         printf "$${step_0}" \
         |sed 's/^[\/\.]*//g;s/\/$$//g;s/^\.build\///g' \
@@ -498,6 +504,8 @@ function derive_stackname(){
             else if ( NF == 2) print $$(NF - 1)"/"$$(NF);
             else print $$1"_-_"$$(NF - 1)"/"$$(NF);}' \
     )" || return $$?
+
+    >&2 echo "step_1=$$step_1"
 
     if [ -z "$${step_1}" ];then
         step_1=$$(basename "$${3}") || return $$?
@@ -537,7 +545,7 @@ function derive_stackname(){
 
 function create_configuration_template(){
 
-cat << CONFIGURATION_STACK >./.build/configstack.yaml
+cat << CONFIGURATION_STACK >"$${BUILD_ROOTDIR}"/configstack.yaml
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Description: ConfigurationStack
@@ -1022,7 +1030,7 @@ function git_merge_include(){
 endef
 
 define GIT_IGNORE
-    cat << IGNORE_FILE_BUILD >.build/.gitignore 
+    cat << IGNORE_FILE_BUILD >$(BUILD_ROOTDIR)/.gitignore 
 # ignore everything under build
 # .build/* should only contain generated data
 # this file is auto-generated by Makefile

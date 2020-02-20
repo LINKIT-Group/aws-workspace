@@ -3,15 +3,15 @@
 # SPDX-License-Identifier: MIT
 # --------------------------------------------------------------------
 
-NAME := aws-workspace
+NAME := cloud-toolkit
 SERVICE_TARGET ?= $(strip $(if $(target),$(target),stable))
 WORKDIR := ~/repositories
-
 
 ifeq ($(user),)
 # USER retrieved from env, UID from shell.
 HOST_USER ?= $(strip $(if $(USER),$(USER),root))
 HOST_UID ?= $(strip $(if $(shell id -u),$(shell id -u),0))
+HOST_GID ?= $(strip $(if $(shell id -u),$(shell id -g),0))
 else
 # allow override by adding user= and/ or uid=  (lowercase!).
 # uid= defaults to 0 if user= set (i.e. root).
@@ -19,32 +19,18 @@ HOST_USER = $(user)
 HOST_UID = $(strip $(if $(uid),$(uid),0))
 endif
 
-ifeq ($(HOST_USER),root)
-USER_HOME = /root
-else
-USER_HOME = /home/$(HOST_USER)
-endif
-
-CMD_ARGUMENTS ?= $(cmd)
-
 # export such that its passed to shell functions for Docker to pick up.
 export HOST_USER
 export HOST_UID
-export USER_HOME
+export HOST_GID
 export WORKDIR
 
 
 .PHONY: shell
 shell:
-ifeq ($(CMD_ARGUMENTS),)
-	@# no command is given, default to shell
+	@# start new shell
 	@[ -d $(WORKDIR) ] || mkdir $(WORKDIR)
-	docker-compose -p $(NAME) run --rm $(SERVICE_TARGET) bash -l
-else
-	@# run the command
-	@[ -d $(WORKDIR) ] || mkdir $(WORKDIR)
-	docker-compose -p $(NAME) run --rm $(SERVICE_TARGET) bash -l -c "$(CMD_ARGUMENTS)"
-endif
+	docker-compose -p $(NAME) run --rm $(SERVICE_TARGET)
 
 .PHONY: build
 build: 
@@ -53,10 +39,10 @@ build:
 .PHONY: cfn-make
 cfn-make:
 	make -C devel/cfn-makefile
-	printf "devel/files/ stable/files/" |xargs -n 1 cp -v devel/cfn-makefile/.build/cfn-Makefile
+	printf "devel/files/generated/ stable/files/generated/" |xargs -n 1 cp -v devel/cfn-makefile/.build/cfn-Makefile
 
-.PHONY: update
-update: clean cfn-make
+.PHONY: toolkit
+toolkit: clean cfn-make
 	# run development build to create input-artifacts in .build
 	make build target=devel
 	@# update build artifacts in .build
@@ -71,7 +57,8 @@ update: clean cfn-make
 	docker rm '$(tmp_container)'
 	# if update target == stable, copy build artifacts and call regular build
 ifeq ($(SERVICE_TARGET),stable)
-	cp .build/requirements.txt stable/requirements.txt
+	# cp .build artifacts from devel to stable
+	cp -rf .build/* stable/files/generated/
 	make build
 endif
 

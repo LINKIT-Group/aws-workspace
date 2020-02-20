@@ -1,7 +1,7 @@
 
 function __make(){
     if [ ! -f Makefile ] && [ ! "${1:0:1}" = '-' ];then
-        make -f ~/cfn-Makefile "$@";
+        make -f /cfn-Makefile "$@";
     else
         make "$@";
     fi
