@@ -65,7 +65,7 @@ endif
 .PHONY: whoami
 whoami:
 	@[ -d $(WORKDIR) ] || mkdir $(WORKDIR)
-	docker-compose run --rm $(SERVICE_TARGET) bash -l -c "whoami"
+	docker-compose -p $(NAME) run --rm $(SERVICE_TARGET) bash -l -c "true"
 	
 .PHONY: clean
 clean:
