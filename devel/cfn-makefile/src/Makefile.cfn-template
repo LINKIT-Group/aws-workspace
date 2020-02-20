@@ -106,8 +106,8 @@ set_environment_aws: set_workdir set_environment_local
 	@# target: set_environment_aws
 	@#   define name of _DEPLOYSTACK and _CONFIGSTACK based on _USERID and template
 	@#   location (_TEMPLATE_ROOT). If sourced from GIT, append branchname and commit
-	@# get last 8 chars of USERID
-	$(eval _USERID = $(if $(userid),$(userid),$(shell \
+	@# get last 8 chars of USERID (prefix 'u' because stacks cant start with a number)
+	$(eval _USERID = u$(if $(userid),$(userid),$(shell \
         aws sts get-caller-identity \
           --query UserId \
           --output text \

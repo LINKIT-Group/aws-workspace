@@ -31,8 +31,20 @@ export AWS_DEFAULT_REGION="${YOUR_AWS_DEFAULT_REGION}"
 # start shell (default target == shell)
 make
 
-# check environment only
+# validate AWS environment
 make whoami
+```
+
+## Build an App
+```
+# pull some CloudFormation code
+git clone https://github.com/LINKIT-Group/cloudformation-samples.git
+
+# run make (note: make will also keep working when you switch directories)
+make deploy template=cloudformation-samples/ApiGateway/PostIt/template.yaml
+
+# delete stack
+make delete template=cloudformation-samples/ApiGateway/PostIt/template.yaml
 ```
 
 ## Build and Version switch
