@@ -18,7 +18,7 @@ RUN apt-get update --fix-missing \
         virtualenv==20.0.4 \
     && pip install -r requirements.txt
 
-COPY files/profile /etc/
+COPY files/etc/* /etc/
 COPY files/profile.d/*.sh /etc/profile.d/
 COPY files/generated/scripts /scripts
 COPY files/generated/cfn-Makefile /

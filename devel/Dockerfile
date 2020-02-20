@@ -34,7 +34,7 @@ RUN python -m pip install \
         aws-cdk.core \
     && npm install -g aws-cdk
 
-COPY files/profile /etc/
+COPY files/etc/* /etc/
 COPY files/profile.d/*.sh /etc/profile.d/
 COPY files/scripts/* /build/scripts/
 COPY files/generated/cfn-Makefile /
