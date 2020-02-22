@@ -7,6 +7,7 @@ NAME := cloud-toolkit
 SERVICE_TARGET ?= $(strip $(if $(target),$(target),stable))
 WORKDIR := ~/repositories
 
+
 ifeq ($(user),)
 # USER retrieved from env, UID from shell.
 HOST_USER ?= $(strip $(if $(USER),$(USER),root))
@@ -48,7 +49,7 @@ toolkit: clean cfn-make
 	@# update build artifacts in .build
 	@# - create temporary container from _devel target
 	@$(eval tmp_container = $(shell \
-		printf '$(NAME)_devel-'$$(($$(date +%s%N)/1000000)) \
+		printf '$(NAME)'_devel-$$(date +%s)-$${RANDOM} \
 	))
 	docker create --name '$(tmp_container)' '$(NAME)_devel'
 	@# - copy artifacts

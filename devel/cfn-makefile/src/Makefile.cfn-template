@@ -9,7 +9,9 @@ NAME := CloudFormation Makefile
 VERSION := 0.94-{{ EPOCH_IN_MILLISECONDS }}
 DATE := {{ ISO_8601_DATE }}
 
-BUILD_ROOTDIR := $(if $(BUILD_ROOTDIR),$(BUILD_ROOTDIR),.build)
+_WORKDIR := $(CURDIR)
+
+BUILD_ROOTDIR := $(if $(BUILD_ROOTDIR),$(BUILD_ROOTDIR),$(_WORKDIR)/.build)
 
 # profile=
 _AWS_PROFILE = \
@@ -22,9 +24,8 @@ _GIT_REPOSITORY = $(if $(git),$(git),)
 help: show_help
 	@# target: help
 
-
 .PHONY: deploy
-deploy: set_environment pre_process stack post_process
+deploy: set_environment pre_process package stack post_process
 	@# target: deploy
 	@#  main target, deploy or update a stack via dependency targets:
 	@#  set_environment, pre_process, stack and post_process
@@ -32,7 +33,7 @@ deploy: set_environment pre_process stack post_process
 
 
 .PHONY: stack
-stack: read_configuration package
+stack: read_configuration
 	@# target: stack
 	@#  ensure configuration is read, and stack is packaged
 	@#	then deploys stack via AWS CLI
@@ -61,8 +62,6 @@ stack: read_configuration package
 set_workdir:
 	@# target: set_workdir
 	@#   setup a workingspace in ${PATH_OF_THIS_MAKEFILE}/.build
-	$(eval _WORKDIR = $(shell \
-    	cd $$(dirname "$${BASH_SOURCE[0]}" || echo ".") && pwd || echo ""))
 	@[ -d "$(BUILD_ROOTDIR)" ] || mkdir "$(BUILD_ROOTDIR)"
 	@tmpfile="$(BUILD_ROOTDIR)"/tmpfile; \
 	   cat <<< "$${GIT_IGNORE}" >$${tmpfile}; \
@@ -137,8 +136,6 @@ set_environment: set_environment_local set_environment_aws
 .PHONY: package
 package: set_environment
 	@# target: package
-	@# 	package CloudFormation (nested) Stacks and Lambdas
-	python /scripts/buildstack.py --stackdir "$(_TEMPLATE_ROOT)" --builddir "$(_BUILDDIR)"
 	aws cloudformation package \
 		--profile $(_AWS_PROFILE) \
 		--template-file "$(_BUILDDIR)"/"$(_TEMPLATE_NAME)" \
@@ -151,6 +148,8 @@ package: set_environment
 pre_process: set_environment read_configuration
 	@# target: pre_process
 	@#	calls ./pre_process.sh
+	@# 	package CloudFormation (nested) Stacks and Lambdas
+	python /scripts/buildstack.py --stackdir "$(_TEMPLATE_ROOT)" --builddir "$(_BUILDDIR)"
 	@# parameters.ini is sourced from _BUILDDIR as it may be auto-generated
 	@# only copy when source is an update
 	[ ! -s "$(_TEMPLATE_ROOT)"/parameters.ini ] || \
