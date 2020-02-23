@@ -15,7 +15,7 @@ BUILD_ROOTDIR := $(if $(BUILD_ROOTDIR),$(BUILD_ROOTDIR),$(_WORKDIR)/.build)
 
 # profile=
 _AWS_PROFILE = \
-	$(if $(profile),$(profile),$(if $(AWS_PROFILE),$(AWS_PROFILE),default))
+	$(if $(profile),$(profile),$(if $(AWS_PROFILE),$(AWS_PROFILE),runtime_default))
 
 _GIT_REPOSITORY = $(if $(git),$(git),)
 

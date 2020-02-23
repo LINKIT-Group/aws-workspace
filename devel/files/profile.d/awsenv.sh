@@ -101,8 +101,9 @@ credentials_from_role(){
         profile_name=$(basename "${role_arn}")
 
     export $(get_credentials "${role_arn}") \
-        && export AWS_CURRENT_PROFILE="${profile_name}" \
-        && register_profile "${profile_name}"
+        && register_profile "${profile_name}" \
+        && export AWS_PROFILE="${profile_name}" \
+        && export AWS_ROLE_ARN="${role_arn}"
     return $?
 }
 
@@ -126,10 +127,10 @@ set_default_credentials(){
             && export AWS_SESSION_TOKEN="${_RUNTIME_AWS_SESSION_TOKEN}"
 
         [ ! -z "${_RUNTIME_AWS_ROLE_ARN}" ] \
-            && export AWS_AWS_ROLE_ARN="${_RUNTIME_AWS_ROLE_ARN}"
+            && export AWS_ROLE_ARN="${_RUNTIME_AWS_ROLE_ARN}"
 
         # env is back at the default profile
-        export AWS_CURRENT_PROFILE="${DEFAULT_PROFILE}"
+        export AWS_PROFILE="${DEFAULT_PROFILE}"
     else
         # first run -- store credentials so it can be retrieved on consecutive runs
         if [ -z "${AWS_DEFAULT_REGION}" ];then
@@ -143,7 +144,7 @@ set_default_credentials(){
         if [ ! -z "${AWS_ROLE_ARN}" ];then
             credentials_from_role "${AWS_ROLE_ARN}" "${DEFAULT_PROFILE}"
         else
-            export AWS_CURRENT_PROFILE="${DEFAULT_PROFILE}"
+            export AWS_PROFILE="${DEFAULT_PROFILE}"
         fi
 
         export _RUNTIME_AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}"
@@ -151,6 +152,7 @@ set_default_credentials(){
         export _RUNTIME_AWS_SESSION_TOKEN="${AWS_SESSION_TOKEN}"
 
         credentials_defined || return 1
+        whoami
     fi
     return 0
 }
@@ -164,8 +166,8 @@ set_default_credentials
 # switch credentials during runtime if custom_role_arn is set
 if [ ! -z "${custom_role_arn}" ];then
     credentials_from_role "${custom_role_arn}" "${custom_profile_name}" \
+        && whoami \
         || set_default_credentials
 fi
 
-whoami
 return 0

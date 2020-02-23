@@ -8,8 +8,8 @@
 
 SHELL := /bin/bash
 NAME := CloudFormation Makefile
-VERSION := 0.94-1582322809751
-DATE := 2020-02-21T22:06:49.751158+00:00
+VERSION := 0.94-1582489902549
+DATE := 2020-02-23T20:31:42.549323+00:00
 
 _WORKDIR := $(CURDIR)
 
@@ -17,7 +17,7 @@ BUILD_ROOTDIR := $(if $(BUILD_ROOTDIR),$(BUILD_ROOTDIR),$(_WORKDIR)/.build)
 
 # profile=
 _AWS_PROFILE = \
-	$(if $(profile),$(profile),$(if $(AWS_PROFILE),$(AWS_PROFILE),default))
+	$(if $(profile),$(profile),$(if $(AWS_PROFILE),$(AWS_PROFILE),runtime_default))
 
 _GIT_REPOSITORY = $(if $(git),$(git),)
 
