@@ -8,8 +8,8 @@
 
 SHELL := /bin/bash
 NAME := CloudFormation Makefile
-VERSION := 0.94-1582489902549
-DATE := 2020-02-23T20:31:42.549323+00:00
+VERSION := 0.94-1582493870795
+DATE := 2020-02-23T21:37:50.794993+00:00
 
 _WORKDIR := $(CURDIR)
 
@@ -26,6 +26,7 @@ _GIT_REPOSITORY = $(if $(git),$(git),)
 help: show_help
 	@# target: help
 
+
 .PHONY: deploy
 deploy: set_environment pre_process package stack post_process
 	@# target: deploy
@@ -40,7 +41,7 @@ stack: read_configuration
 	@#  ensure configuration is read, and stack is packaged
 	@#	then deploys stack via AWS CLI
 	@# verify if Configuration Outputs are complete and non-empty
-	@([ ! -z $(ArtifactBucket) ] && [ ! -z $(IAMServiceRole) ]) || \
+	@([ ! -z $(ArtifactBucket) ] && [ ! -z $(CloudFormationStackRole) ]) || \
 		(echo "Configuration Outputs incomplete"; exit 1)
 	@# deploy Stack -- include parameters.ini if file exists
 	( \
@@ -49,7 +50,7 @@ stack: read_configuration
 		aws cloudformation deploy \
 			--profile $(_AWS_PROFILE) \
 	        --stack-name $(_DEPLOYSTACK) \
-			--role-arn $(IAMServiceRole) \
+			--role-arn $(CloudFormationStackRole) \
 			--template-file "$(_BUILDDIR)"/template-generated.yaml \
 	        --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
 			--no-fail-on-empty-changeset \
@@ -226,24 +227,24 @@ endif
 .PHONY: read_configuration
 read_configuration: init_configuration
 	@# target: read_configuration
-	@#	retrieve configuration vars ArtifactBucket and IAMServiceRole,
+	@#	retrieve configuration vars ArtifactBucket and CloudFormationStackRole,
 	@#	set vars in Makefile environment so other targets can access them
 	$(eval ArtifactBucket = $(shell \
 		$(cfn-env) printf $$(configstack_output $(_CONFIGSTACK) ArtifactBucket) \
 	))
 	$(if $(ArtifactBucket),,$(error ConfigStack missing parameter: ArtifactBucket))
-	$(eval IAMServiceRole = $(shell \
-		$(cfn-env) printf $$(configstack_output $(_CONFIGSTACK) IAMServiceRole) \
+	$(eval CloudFormationStackRole = $(shell \
+		$(cfn-env) printf $$(configstack_output $(_CONFIGSTACK) CloudFormationStackRole) \
 	))
-	$(if $(IAMServiceRole),,$(error ConfigStack missing parameter: IAMServiceRole))
+	$(if $(CloudFormationStackRole),,$(error ConfigStack missing parameter: CloudFormationStackRole))
 
 
 .PHONY: delete
 delete: set_environment read_configuration
 	@# target=delete:
-	@#	get IAMServiceRole (supplied by Configuration Stack) and delete stack
+	@#	get CloudFormationStackRole (supplied by Configuration Stack) and delete stack
 	@#	if no Configuration Stack exists, one is created (init_configuration)
-	@$(cfn-env) delete_stack $(_DEPLOYSTACK) $(IAMServiceRole)
+	@$(cfn-env) delete_stack $(_DEPLOYSTACK) $(CloudFormationStackRole)
 	@echo Stack is Deleted: $(_DEPLOYSTACK)
 
 
@@ -252,7 +253,7 @@ delete_full: delete
 	@# target=delete_full
 	@#	calls delete target via dependency
 	@#  removes Configuration Stack and .build dir
-	@if [ -z "$(ArtifactBucket)" ] && [ -z "$(IAMServiceRole)" ];then \
+	@if [ -z "$(ArtifactBucket)" ] && [ -z "$(CloudFormationStackRole)" ];then \
 		echo "Nothing to erase"; \
 	else \
 		$(cfn-env) delete_stack_configuration "$(_CONFIGSTACK)"; \
@@ -633,7 +634,7 @@ Resources:
 Outputs:
   ArtifactBucket:
     Value: !Ref Bucket
-  IAMServiceRole:
+  CloudFormationStackRole:
     Value: !GetAtt ServiceRoleForCloudFormation.Arn
 CONFIGURATION_STACK
 }

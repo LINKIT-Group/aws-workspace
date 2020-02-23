@@ -246,7 +246,7 @@ Resources:
 Outputs:
   ArtifactBucket:
     Value: !Ref Bucket
-  IAMServiceRole:
+  CloudFormationStackRole:
     Value: !GetAtt ServiceRoleForCloudFormation.Arn
 CONFIGURATION_STACK
 }
