@@ -117,8 +117,6 @@ function derive_stackname(){
             else print $1"_-_"$(NF - 1)"/"$(NF);}' \
     )" || return $?
 
-    >&2 echo "step_1=$step_1"
-
     if [ -z "${step_1}" ];then
         step_1=$(basename "${3}") || return $?
     fi
@@ -244,7 +242,7 @@ Resources:
       ServiceToken: !GetAtt BucketEmptyLambda.Arn
       BucketName: !Ref Bucket
 Outputs:
-  ArtifactBucket:
+  S3Bucket:
     Value: !Ref Bucket
   CloudFormationStackRole:
     Value: !GetAtt ServiceRoleForCloudFormation.Arn

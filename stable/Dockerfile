@@ -1,6 +1,6 @@
 FROM python:3.8-slim-buster
 
-COPY files/generated/requirements.txt .
+COPY generated/requirements.txt .
 
 RUN apt-get update --fix-missing \
     && apt-get -y install --no-install-recommends \
@@ -18,12 +18,12 @@ RUN apt-get update --fix-missing \
         virtualenv==20.0.4 \
     && pip install -r requirements.txt
 
-COPY files/etc/* /etc/
-COPY files/profile.d/*.sh /etc/profile.d/
-COPY files/generated/scripts /scripts
-COPY files/generated/cfn-Makefile /
-COPY files/aliases /.aliases
-COPY files/entrypoint.sh /
+COPY generated/etc/* /etc/
+COPY generated/profile.d/*.sh /etc/profile.d/
+COPY generated/scripts /scripts
+COPY generated/cfn-Makefile /
+COPY generated/aliases /.aliases
+COPY generated/entrypoint.sh /
 
 WORKDIR /git
 CMD ["/bin/sh", "/entrypoint.sh" ]

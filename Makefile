@@ -40,7 +40,7 @@ build:
 .PHONY: cfn-make
 cfn-make:
 	make -C devel/cfn-makefile
-	printf "devel/files/generated/ stable/files/generated/" |xargs -n 1 cp -v devel/cfn-makefile/.build/cfn-Makefile
+	printf "devel/files/generated/ stable/generated/" |xargs -n 1 cp -v devel/cfn-makefile/.build/cfn-Makefile
 
 .PHONY: toolkit
 toolkit: clean cfn-make
@@ -59,7 +59,7 @@ toolkit: clean cfn-make
 	# if update target == stable, copy build artifacts and call regular build
 ifeq ($(SERVICE_TARGET),stable)
 	# cp .build artifacts from devel to stable
-	cp -rf .build/* stable/files/generated/
+	cp -rf .build/* stable/generated/
 	make build
 endif
 

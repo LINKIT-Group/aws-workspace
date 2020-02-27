@@ -36,10 +36,16 @@ RUN python -m pip install \
 
 COPY files/etc/* /etc/
 COPY files/profile.d/*.sh /etc/profile.d/
-COPY files/scripts/* /build/scripts/
 COPY files/generated/cfn-Makefile /
 COPY files/aliases /.aliases
 COPY files/entrypoint.sh /
+
+# copied to /build, so stable can pick it up
+COPY files/aliases /build/
+COPY files/entrypoint.sh /build/
+COPY files/scripts/* /build/scripts/
+COPY files/etc /build/etc
+COPY files/profile.d /build/profile.d
 
 WORKDIR /git
 CMD ["/bin/sh", "/entrypoint.sh" ]
