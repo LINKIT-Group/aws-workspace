@@ -4,10 +4,11 @@ export PATH="/app/.env/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sb
 export PS1='\h:\w\$ '
 umask 022
 
-if [ -f /.aliases ]; then
-    . /.aliases
-fi
+[ -f /.aliases ] && . /.aliases
 
 for script in /etc/profile.d/*.sh;do
     [ -r $script ] && . $script
 done
+
+# export custom variables
+[ -s .env ] && export $(cat .env)

@@ -6,6 +6,7 @@ RUN apt-get update --fix-missing \
     && apt-get -y install --no-install-recommends \
         bash \
         procps \
+        openssh-client \
         jq \
         curl \
         git \

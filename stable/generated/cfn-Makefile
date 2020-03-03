@@ -8,8 +8,8 @@
 
 SHELL := /bin/bash
 NAME := CloudFormation Makefile
-VERSION := 0.94-1582830184681
-DATE := 2020-02-27T19:03:04.682163+00:00
+VERSION := 0.94-1583266440693
+DATE := 2020-03-03T20:14:00.692508+00:00
 
 _WORKDIR := $(CURDIR)
 
@@ -19,7 +19,12 @@ BUILD_ROOTDIR := $(if $(BUILD_ROOTDIR),$(BUILD_ROOTDIR),$(_WORKDIR)/.build)
 _AWS_PROFILE = \
 	$(if $(profile),$(profile),$(if $(AWS_PROFILE),$(AWS_PROFILE),runtime_default))
 
-_GIT_REPOSITORY = $(if $(git),$(git),)
+
+# cli parameters take precedence over environment
+# cli parameter keys are shortened for convenience (e.g. sn=, git=)
+# if none are set -- leave empty
+STACKNAME := $(if $(sn),$(sn),$(or $(STACKNAME),$(STACKNAME)))
+GIT_REPOSITORY := $(if $(git),$(git),$(or $(GIT_REPOSITORY),$(GIT_REPOSITORY)))
 
 
 .PHONY: help
@@ -48,6 +53,7 @@ stack: read_configuration
         export STACKNAME=$(STACKNAME); \
         export S3_BUCKET=$(S3_BUCKET); \
         export S3_PREFIX=$(S3_PREFIX); \
+		set -a; [ -s "$(_BUILDDIR)"/.env-cfnmake ] && . "$(_BUILDDIR)"/.env-cfnmake; set +a; \
 		if [ -s "$(_BUILDDIR)"/parameters.ini ];then \
 			pfile_in="$(_BUILDDIR)"/parameters.ini; \
 			pfile_out="$(_BUILDDIR)"/parameters-generated.ini; \
@@ -64,7 +70,7 @@ stack: read_configuration
 			--no-fail-on-empty-changeset \
 			--tags \
 				_CONFIGSTACK="$(_CONFIGSTACK)" \
-				_GIT_REPOSITORY="$(if $(_GIT_REPOSITORY),$(_GIT_REPOSITORY),None)" \
+				_GIT_REPOSITORY="$(if $(GIT_REPOSITORY),$(GIT_REPOSITORY),None)" \
 			$${params} \
 	)
 
@@ -91,12 +97,12 @@ set_environment_local: set_workdir
 	$(eval _TEMPLATE = $(if $(template),$(template),template.yaml))
 	$(eval _TEMPLATE_NAME = $(shell basename "$(_TEMPLATE)"))
 	$(eval _TEMPLATE_ROOT = $(shell dirname "$(_TEMPLATE)"))
-ifneq ($(_GIT_REPOSITORY),)
+ifneq ($(GIT_REPOSITORY),)
 	@# if git=${repository} is passed, pull from repository into .build/_GIT_ROOT
 	@# can be used together with template={path} -- ${path} starts from _GIT_ROOT
-	$(git-env) pull_from_git "$(_GIT_REPOSITORY)" "$(_WORKDIR)"
+	$(git-env) pull_from_git "$(GIT_REPOSITORY)" "$(_WORKDIR)"
 	$(eval _GIT_ROOT = $(shell \
-		$(git-env) printf "$$(git_namestring "$(_GIT_REPOSITORY)" "$(_WORKDIR)")" \
+		$(git-env) printf "$$(git_namestring "$(GIT_REPOSITORY)" "$(_WORKDIR)")" \
 	))
 	$(if $(_GIT_ROOT),,$(error _GIT_ROOT))
 	@# reconstruct _TEMPLATE_ROOT by putting _GIT_ROOT in front of it
@@ -126,9 +132,8 @@ set_environment_aws: set_workdir set_environment_local
 		|awk '{print substr($$0,length($$0) - 7,8)}' \
 	)))
 	$(if $(_USERID),,$(error _USERID))
-	@# if stackname={} option is passed: use this name for DEPLOYSTACK
-	@# else derive stackname from TEMPLATE_ROOT
-	$(eval STACKNAME = $(if $(stackname),$(stackname),$(shell \
+	@# derive STACKNAME if not yet set
+	$(eval STACKNAME = $(if $(STACKNAME),$(STACKNAME),$(shell \
 	 	$(cfn-env) derive_stackname "$(_TEMPLATE_ROOT)" "$(_GIT_ROOT)" "$(_WORKDIR)" "$(_USERID)" \
 	)))
 	$(if $(STACKNAME),,$(error STACKNAME))
@@ -185,19 +190,22 @@ buildstack: read_configuration
 	
 
 .PHONY: pre_process
-pre_process: read_configuration buildstack
+pre_process: read_configuration package_env buildstack
 	@# target: pre_process
 	@#	calls ./pre_process.sh
 	@# run pre_process.sh if it exist
 	[ ! -s "$(_TEMPLATE_ROOT)/pre_process.sh" ] || \
 	( \
 		cd "$(_TEMPLATE_ROOT)" && \
-        export AWS_PROFILE=$(_AWS_PROFILE); \
-        export CONFIGURATION_BUCKET=$(S3_BUCKET); \
-        export STACKNAME=$(STACKNAME); \
-        export BUILDDIR=$(_BUILDDIR); \
 		echo "RUNSCRIPT:$(_TEMPLATE_ROOT)/pre_process.sh"; \
-		bash ./pre_process.sh; \
+		env -i \
+		  PATH=$$PATH \
+		  AWS_PROFILE=$(_AWS_PROFILE) \
+          STACKNAME=$(STACKNAME) \
+          BUILDDIR=$(_BUILDDIR) \
+		  S3_BUCKET=$(S3_BUCKET) \
+          S3_PREFIX=$(S3_PREFIX) \
+		bash --norc --noprofile -c 'source ./pre_process.sh && env >"$(_BUILDDIR)"/.env-cfnmake'; \
 		exit_code="$$?"; \
 		echo "FINISHED:$(_TEMPLATE_ROOT)/pre_process.sh (exit=$${exit_code})"; \
 		exit $${exit_code}; \
@@ -309,9 +317,9 @@ clean:
 	@#	add stack=$${DIRECTORY} to also delete stack data
 	# Note that configstack cant be deleted as long as there is one stack
 	@# if either _TEMPLATE or _GIT_REPOSITORY is set, do full stack delete
-ifneq ($(filter %,$(_TEMPLATE) $(_GIT_REPOSITORY)),)
+ifneq ($(filter %,$(_TEMPLATE) $(GIT_REPOSITORY)),)
 	make -f "$(lastword $(MAKEFILE_LIST))" delete_full \
-		git="$(_GIT_REPOSITORY)" \
+		git="$(GIT_REPOSITORY)" \
 		template="$(_TEMPLATE)" \
 		noconfig="true"
 endif
@@ -1122,7 +1130,7 @@ show_help:
 	@echo '  template=$${_TEMPLATE}      Name of CloudFormation rootstack template,'
 	@echo '                               (default: "./template.yaml")'
 	@echo '  git=$${GITURL || GITDIR}    Optionally retrieve stack from Git'
-	@echo '  stackname=$${STACKNAME}     Set STACKNAME manually (not recommended)'
+	@echo '  sn=$${STACKNAME}            Set STACKNAME manually (not recommended)'
 	@echo ''
 	@echo 'Developer Targets:'
 	@echo '  build path=$${PATH}}     Build CloudFormation Configuration Stack'

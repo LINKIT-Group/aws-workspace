@@ -74,6 +74,14 @@ register_profile(){
     # Update profile ${1} in  ~/.aws/[config,credentials]
     # values based on current AWS_-environment settings
     profile_name=${1}
+
+    # to prevent a chicken-egg-type situation temporarily disable env profile
+    # if it is the same one we are registering
+    if [ ! -z ${AWS_PROFILE} ] && [ ${AWS_PROFILE} == ${profile_name} ];then
+        _TMP_AWS_PROFILE=${AWS_PROFILE}
+        unset AWS_PROFILE
+    fi
+
     aws configure set \
         region ${AWS_DEFAULT_REGION} --profile ${profile_name} \
     && aws configure set \
@@ -81,12 +89,16 @@ register_profile(){
     && aws configure set \
         aws_secret_access_key ${AWS_SECRET_ACCESS_KEY} --profile ${profile_name} \
     || return 1
-    
+
     if [ ! -z ${AWS_SESSION_TOKEN} ];then
         aws configure set \
             aws_session_token ${AWS_SESSION_TOKEN} --profile ${profile_name} \
         || return 1
     fi
+
+    # restore disabled profile
+    [ ! -z ${_TMP_AWS_PROFILE} ] && export AWS_PROFILE=${_TMP_AWS_PROFILE}
+
     return 0
 }
 
@@ -96,7 +108,7 @@ credentials_from_role(){
     # export to environment and  update profile configuration
     role_arn=${1}
     profile_name=${2}
-    
+
     [ -z ${profile_name} ] && \
         profile_name=$(basename ${role_arn})
 
@@ -138,25 +150,28 @@ set_default_credentials(){
             && export S3_PREFIX=${_RUNTIME_S3_PREFIX}
 
         # env is back at the default profile
-        export AWS_PROFILE=${DEFAULT_PROFILE}
+        # export AWS_PROFILE=${DEFAULT_PROFILE}
+        export AWS_PROFILE=${_RUNTIME_AWS_PROFILE}
     else
         # first run -- store credentials so it can be retrieved on consecutive runs
-
         # region must be set - if empty, use default
         if [ -z ${AWS_DEFAULT_REGION} ];then
             export AWS_DEFAULT_REGION=${DEFAULT_REGION}
         fi
+
+        [ -z ${AWS_PROFILE} ] && export AWS_PROFILE=${DEFAULT_PROFILE}
+        register_profile ${AWS_PROFILE}
+
         export AWS_REGION=${AWS_DEFAULT_REGION}
         export _RUNTIME_AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+        export _RUNTIME_AWS_PROFILE=${AWS_PROFILE}
 
         export _RUNTIME_AWS_ROLE_ARN=${AWS_ROLE_ARN}
         # ensure role based credentials run before setting default
         # _RUNTIME_${CREDENTIALS} as environment vars are altered by it
         if [ ! -z ${AWS_ROLE_ARN} ];then
-            credentials_from_role ${AWS_ROLE_ARN} ${DEFAULT_PROFILE}
-        else
-            register_profile ${DEFAULT_PROFILE}
-            export AWS_PROFILE=${DEFAULT_PROFILE}
+            # credentials_from_role ${AWS_ROLE_ARN} ${DEFAULT_PROFILE}
+            credentials_from_role ${AWS_ROLE_ARN} ${AWS_PROFILE}
         fi
 
         export _RUNTIME_AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
