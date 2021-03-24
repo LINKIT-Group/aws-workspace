@@ -53,7 +53,7 @@ pytz==2019.3              # via dateparser, tzlocal
 pyyaml==5.2               # via aws-sam-cli, awscli, cfn-lint, serverlessrepo
 regex==2020.2.18          # via dateparser
 requests==2.22.0          # via aws-sam-cli, cookiecutter, docker
-rsa==3.4.2                # via awscli
+rsa==4.1                # via awscli
 s3transfer==0.3.3         # via awscli, boto3
 serverlessrepo==0.1.9     # via aws-sam-cli
 six==1.14.0               # via astroid, aws-lambda-builders, aws-sam-translator, cfn-lint, docker, jsonschema, packaging, pyrsistent, python-dateutil, serverlessrepo, websocket-client
