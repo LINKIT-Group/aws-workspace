@@ -50,7 +50,7 @@ pyrsistent==0.15.7        # via jsonschema
 pytest==5.3.5
 python-dateutil==2.8.0
 pytz==2019.3              # via dateparser, tzlocal
-pyyaml==5.2               # via aws-sam-cli, awscli, cfn-lint, serverlessrepo
+pyyaml==5.4               # via aws-sam-cli, awscli, cfn-lint, serverlessrepo
 regex==2020.2.18          # via dateparser
 requests==2.22.0          # via aws-sam-cli, cookiecutter, docker
 rsa==3.4.2                # via awscli
