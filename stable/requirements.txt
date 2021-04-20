@@ -42,7 +42,7 @@ more-itertools==8.2.0     # via pytest
 packaging==20.1           # via pytest
 pluggy==0.13.1            # via pytest
 poyo==0.5.0               # via cookiecutter
-py==1.8.1                 # via pytest
+py==1.10.0                 # via pytest
 pyasn1==0.4.8             # via rsa
 pylint==2.4.4
 pyparsing==2.4.6          # via packaging
