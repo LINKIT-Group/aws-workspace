@@ -20,7 +20,7 @@ chardet==3.0.4            # via binaryornot, requests
 chevron==0.13.1           # via aws-sam-cli
 click==7.0                # via aws-sam-cli, cookiecutter, flask
 colorama==0.4.3           # via awscli
-cookiecutter==1.6.0       # via aws-sam-cli
+cookiecutter==2.1.1       # via aws-sam-cli
 dateparser==0.7.2         # via aws-sam-cli
 docker==4.2.0             # via aws-sam-cli
 docutils==0.15.2          # via awscli, botocore
