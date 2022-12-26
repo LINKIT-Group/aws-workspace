@@ -63,7 +63,7 @@ urllib3==1.25.8           # via botocore, requests
 wcwidth==0.1.8            # via pytest
 websocket-client==0.57.0  # via docker
 werkzeug==1.0.0           # via flask
-wheel==0.34.2             # via aws-lambda-builders
+wheel==0.38.1             # via aws-lambda-builders
 whichcraft==0.6.1         # via cookiecutter
 wrapt==1.11.2             # via astroid
 
